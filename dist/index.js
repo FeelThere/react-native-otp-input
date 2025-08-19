@@ -1,9 +1,10 @@
-import React, { Component } from 'react';
-import { View, TextInput, TouchableWithoutFeedback, Keyboard, Platform, I18nManager, } from 'react-native';
-import * as Clipboard from 'expo-clipboard';
 import styles from './styles';
-import { isAutoFillSupported } from './helpers/device';
+import React, { Component } from 'react';
+import * as Clipboard from 'expo-clipboard';
 import { codeToArray } from './helpers/codeToArray';
+import { isAutoFillSupported } from './helpers/device';
+import { View, TextInput, TouchableWithoutFeedback, Keyboard, Platform, I18nManager, } from 'react-native';
+
 export default class OTPInputView extends Component {
     constructor(props) {
         super(props);
@@ -126,15 +127,42 @@ export default class OTPInputView extends Component {
         };
         this.renderOneInputField = (_, index) => {
             const { codeInputFieldStyle, codeInputHighlightStyle, secureTextEntry, editable, keyboardType, selectionColor, keyboardAppearance } = this.props;
-            const { defaultTextFieldStyle } = styles;
             const { selectedIndex, digits } = this.state;
             const { clearInputs, placeholderCharacter, placeholderTextColor } = this.props;
-            const { color: defaultPlaceholderTextColor } = { ...defaultTextFieldStyle, ...codeInputFieldStyle };
-            return (<View pointerEvents="none" key={index + "view"} testID="inputSlotView">
-                <TextInput testID="textInput" underlineColorAndroid='rgba(0,0,0,0)' style={selectedIndex === index ? [defaultTextFieldStyle, codeInputFieldStyle, codeInputHighlightStyle] : [defaultTextFieldStyle, codeInputFieldStyle]} ref={ref => { this.fields[index] = ref; }} onChangeText={text => {
-                this.handleChangeText(index, text);
-            }} onKeyPress={({ nativeEvent: { key } }) => { this.handleKeyPressTextInput(index, key); }} value={!clearInputs ? digits[index] : ""} keyboardAppearance={keyboardAppearance} keyboardType={keyboardType} textContentType={isAutoFillSupported ? "oneTimeCode" : "none"} key={index} selectionColor={selectionColor} secureTextEntry={secureTextEntry} editable={editable} placeholder={placeholderCharacter} placeholderTextColor={placeholderTextColor || defaultPlaceholderTextColor}/>
-            </View>);
+            const defaultTextFieldStyle =
+                (styles && styles.defaultTextFieldStyle) || {};
+            const codeInputFieldStyleSafe = codeInputFieldStyle || {};
+            const mergedFieldStyle = { ...(defaultTextFieldStyle || {}), ...(codeInputFieldStyle || {}) };
+            const defaultPlaceholderTextColor = mergedFieldStyle.color;
+
+            return (
+                <View pointerEvents="none" key={index + "view"} testID="inputSlotView">
+                    <TextInput
+                        testID="textInput"
+                        underlineColorAndroid='rgba(0,0,0,0)'
+                        style={[
+                            defaultTextFieldStyle,
+                            codeInputFieldStyle || {},
+                            selectedIndex === index ? (codeInputHighlightStyle || {}) : null,
+                        ]}
+                        ref={ref => { this.fields[index] = ref; }}
+                        onChangeText={text => {
+                            this.handleChangeText(index, text);
+                        }}
+                        onKeyPress={({ nativeEvent: { key } }) => { this.handleKeyPressTextInput(index, key); }}
+                        value={!clearInputs ? digits[index] : ""}
+                        keyboardAppearance={keyboardAppearance}
+                        keyboardType={keyboardType}
+                        textContentType={isAutoFillSupported ? "oneTimeCode" : "none"}
+                        key={index}
+                        selectionColor={selectionColor}
+                        secureTextEntry={secureTextEntry}
+                        editable={editable}
+                        placeholder={placeholderCharacter}
+                        placeholderTextColor={placeholderTextColor || defaultPlaceholderTextColor}
+                    />
+                </View>
+            );
         };
         this.renderTextFields = () => {
             const { pinCount } = this.props;
@@ -169,21 +197,21 @@ export default class OTPInputView extends Component {
         const { pinCount, style, clearInputs } = this.props;
         const digits = this.getDigits();
         return (<View testID="OTPInputView" style={style}>
-                <TouchableWithoutFeedback style={{ width: '100%', height: '100%' }} onPress={() => {
-            if (!clearInputs) {
-                let filledPinCount = digits.filter((digit) => { return (digit !== null && digit !== undefined); }).length;
-                this.focusField(Math.min(filledPinCount, pinCount - 1));
-            }
-            else {
-                this.clearAllFields();
-                this.focusField(0);
-            }
-        }}>
-                    <View style={{ flexDirection: I18nManager.isRTL ? 'row-reverse' : 'row', justifyContent: 'space-between', alignItems: 'center', width: '100%', height: '100%' }}>
-                        {this.renderTextFields()}
-                    </View>
-                </TouchableWithoutFeedback>
-            </View>);
+            <TouchableWithoutFeedback style={{ width: '100%', height: '100%' }} onPress={() => {
+                if (!clearInputs) {
+                    let filledPinCount = digits.filter((digit) => { return (digit !== null && digit !== undefined); }).length;
+                    this.focusField(Math.min(filledPinCount, pinCount - 1));
+                }
+                else {
+                    this.clearAllFields();
+                    this.focusField(0);
+                }
+            }}>
+                <View style={{ flexDirection: I18nManager.isRTL ? 'row-reverse' : 'row', justifyContent: 'space-between', alignItems: 'center', width: '100%', height: '100%' }}>
+                    {this.renderTextFields()}
+                </View>
+            </TouchableWithoutFeedback>
+        </View>);
     }
 }
 OTPInputView.defaultProps = {
